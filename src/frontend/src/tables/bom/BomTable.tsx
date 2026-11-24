@@ -1,5 +1,5 @@
 import { t } from '@lingui/core/macro';
-import { Alert, Box, Group, Stack, Text } from '@mantine/core';
+import { Alert, Box, Button, Group, Stack, Text } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
 import {
   IconArrowRight,
@@ -43,6 +43,7 @@ import {
   RenderPartColumn
 } from '../../components/tables/ColumnRenderers';
 import { PartCategoryFilter } from '../../components/tables/Filter';
+import { BomImportModal } from '../../pages/part/bom/BomImportModal';
 import {
   InvenTreeTable,
   isNestedRecord
@@ -124,6 +125,8 @@ export function BomTable({
   const openImporter = useImporterState((state) => state.openImporter);
 
   const [isEditing, setIsEditing] = useState<boolean>(false);
+
+  const [importBomOpen, setImportBomOpen] = useState<boolean>(false);
 
   const globalSettings = useGlobalSettingsState();
 
@@ -769,6 +772,19 @@ export function BomTable({
 
   const tableActions = useMemo(() => {
     return [
+      // A dedicated, always-visible entry point for uploading a BOM file.
+      // (The same action is also available inside the "add" dropdown while editing.)
+      !isLocked && user.hasAddRole(UserRoles.bom) ? (
+        <Button
+          key='import-bom'
+          size='xs'
+          variant='light'
+          leftSection={<IconFileUpload size={16} />}
+          onClick={() => setImportBomOpen(true)}
+        >
+          {t`Import BOM`}
+        </Button>
+      ) : null,
       <ActionDropdown
         key='add-bom-actions'
         tooltip={t`Add BOM Items`}
@@ -886,6 +902,13 @@ export function BomTable({
             rowStyle: (record: any) =>
               isNestedRecord(record) ? { fontStyle: 'italic' } : undefined
           }}
+        />
+
+        <BomImportModal
+          opened={importBomOpen}
+          onClose={() => setImportBomOpen(false)}
+          partId={partId}
+          onImported={() => table.refreshTable()}
         />
       </Stack>
     </>

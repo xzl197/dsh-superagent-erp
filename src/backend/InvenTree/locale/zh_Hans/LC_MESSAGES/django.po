@@ -6048,7 +6048,7 @@ msgstr "只有可销售的零件才能分配给销售订单"
 
 #: order/models.py:2633 order/models.py:4186
 msgid "Unknown part"
-msgstr ""
+msgstr "未知物料"
 
 #: order/models.py:2660
 msgid "Sale Price"
@@ -11069,3 +11069,34 @@ msgstr ""
 msgid "API Token Issued"
 msgstr ""
 
+
+
+msgid "Invalid quantity"
+msgstr "数量无效"
+
+msgid "A BOM item cannot reference the assembly itself"
+msgstr "BOM 条目不能引用装配件自身"
+
+msgid "Part not specified"
+msgstr "未指定零件"
+
+msgid "BOM items can only be added to an assembly part"
+msgstr "只能为装配件添加 BOM 条目"
+
+msgid "Could not locate a component part column (e.g. IPN)"
+msgstr "未找到子件列（例如 IPN）"
+
+msgid "File must be a CSV or Excel file (.csv, .tsv, .xls, .xlsx)"
+msgstr "文件必须是 CSV 或 Excel 格式（.csv、.tsv、.xls、.xlsx）"
+
+msgid "Update Existing"
+msgstr "更新已有条目"
+
+msgid "Update the quantity of existing BOM items"
+msgstr "更新已存在 BOM 条目的数量"
+
+msgid "CSV or Excel file containing BOM data"
+msgstr "包含 BOM 数据的 CSV 或 Excel 文件"
+
+msgid "Import BOM"
+msgstr "导入 BOM"

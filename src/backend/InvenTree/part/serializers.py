@@ -1817,3 +1817,285 @@ class PartCopyBOMSerializer(serializers.Serializer):
             include_inherited=data.get('include_inherited', False),
             copy_substitutes=data.get('copy_substitutes', True),
         )
+
+class PartBomImportSerializer(serializers.Serializer):
+    """Serializer for importing BOM items from an uploaded data file.
+
+    Accepts a CSV or Excel file (via tablib) and fuzzy-matches the column
+    headers, so that BOM data exported from other systems can be uploaded
+    directly:
+
+    - component part: IPN (or part name)
+    - quantity
+    - reference (optional)
+    - notes (optional)
+    - optional / consumable / allow variants (optional)
+
+    Existing BOM items can either be updated (default) or skipped.
+    """
+
+    class Meta:
+        """Metaclass defining serializer fields."""
+
+        fields = ['data_file', 'update_existing']
+
+    data_file = serializers.FileField(
+        label=_('Data File'),
+        help_text=_('CSV or Excel file containing BOM data'),
+    )
+
+    update_existing = serializers.BooleanField(
+        label=_('Update Existing'),
+        help_text=_('Update the quantity of existing BOM items'),
+        default=True,
+    )
+
+    # Column header aliases (normalized: lowercase, without spaces / underscores / hyphens)
+    HEADER_ALIASES = {
+        'part': {
+            'subpart',
+            'component',
+            'componentcode',
+            'ipn',
+            'sku',
+            'mpn',
+            'partnumber',
+            'partno',
+            'part',
+            '子件',
+            '子件编码',
+            '子件料号',
+            '零件',
+            '零件编码',
+            '物料',
+            '物料编码',
+            '料号',
+            '编码',
+            '型号',
+            '名称',
+        },
+        'quantity': {
+            'quantity',
+            'qty',
+            'count',
+            'amount',
+            '数量',
+            '用量',
+            '每台数量',
+        },
+        'reference': {'reference', 'ref', 'designator', '位号', '参考', '位置'},
+        'notes': {'notes', 'note', 'description', 'remark', '备注', '说明'},
+        'optional': {'optional', '可选'},
+        'consumable': {'consumable', '消耗'},
+        'allow_variants': {'allowvariants', '可变', '允许变体'},
+    }
+
+    @staticmethod
+    def _normalize(value) -> str:
+        """Normalize a column header (or alias) for comparison."""
+        return (
+            str(value)
+            .strip()
+            .lower()
+            .replace(' ', '')
+            .replace('_', '')
+            .replace('-', '')
+        )
+
+    def _match_header(self, headers, key) -> int | None:
+        """Return the index of the first header matching the given alias group."""
+        aliases = self.HEADER_ALIASES.get(key, set())
+
+        for idx, header in enumerate(headers):
+            if self._normalize(header) in aliases:
+                return idx
+
+        # Fall back to a "contains" match (e.g. "零件编码(IPN)")
+        for idx, header in enumerate(headers):
+            normalized = self._normalize(header)
+            for alias in aliases:
+                if alias and alias in normalized:
+                    return idx
+
+        return None
+
+    @staticmethod
+    def _lookup(cache: dict, code: str):
+        """Find a part by IPN, then by name (cached within the request)."""
+        key = code.strip().lower()
+
+        if key in cache:
+            return cache[key]
+
+        part = Part.objects.filter(IPN__iexact=code.strip()).first()
+
+        if part is None:
+            part = Part.objects.filter(name__iexact=code.strip()).first()
+
+        cache[key] = part
+        return part
+
+    def validate_data_file(self, data_file):
+        """Ensure the uploaded file has a supported extension."""
+        name = data_file.name.lower()
+
+        if not any(name.endswith(f'.{ext}') for ext in ['csv', 'tsv', 'xls', 'xlsx']):
+            raise serializers.ValidationError(
+                _('File must be a CSV or Excel file (.csv, .tsv, .xls, .xlsx)')
+            )
+
+        return data_file
+
+    def create(self, validated_data):
+        """Parse the data file and create / update BOM items."""
+        import importer.operations
+
+        part = self.context.get('part', None)
+
+        if part is None:
+            raise serializers.ValidationError({'part': _('Part not specified')})
+
+        if not part.assembly:
+            raise serializers.ValidationError(
+                {'part': _('BOM items can only be added to an assembly part')}
+            )
+
+        update_existing = validated_data.get('update_existing', True)
+
+        try:
+            dataset = importer.operations.load_data_file(validated_data['data_file'])
+        except ValidationError as exc:
+            raise serializers.ValidationError({'data_file': exc.messages})
+
+        headers = importer.operations.normalize_headers(dataset.headers)
+
+        idx_part = self._match_header(headers, 'part')
+        idx_qty = self._match_header(headers, 'quantity')
+        idx_ref = self._match_header(headers, 'reference')
+        idx_notes = self._match_header(headers, 'notes')
+        idx_optional = self._match_header(headers, 'optional')
+        idx_consumable = self._match_header(headers, 'consumable')
+        idx_variants = self._match_header(headers, 'allow_variants')
+
+        if idx_part is None:
+            raise serializers.ValidationError(
+                {'data_file': _('Could not locate a component part column (e.g. IPN)')}
+            )
+
+        def cell(row, idx):
+            if idx is None or idx >= len(row):
+                return ''
+            value = row[idx]
+            return '' if value is None else str(value).strip()
+
+        def flag(value):
+            return str(value).strip().lower() in ['1', 'true', 'yes', 'y', '是', '可选']
+
+        created = 0
+        updated = 0
+        skipped = 0
+        errors = []
+        cache: dict = {}
+
+        for row_number, row in enumerate(dataset, start=2):
+            code = cell(row, idx_part)
+
+            if not code:
+                skipped += 1
+                continue
+
+            qty_raw = cell(row, idx_qty) or '1'
+
+            try:
+                quantity = Decimal(qty_raw.replace(',', '.'))
+            except Exception:
+                errors.append({
+                    'row': row_number,
+                    'message': f'{_("Invalid quantity")}: {qty_raw}',
+                })
+                continue
+
+            if quantity <= 0:
+                errors.append({
+                    'row': row_number,
+                    'message': f'{_("Quantity must be greater than zero")}: {qty_raw}',
+                })
+                continue
+
+            sub_part = self._lookup(cache, code)
+
+            if sub_part is None:
+                errors.append({
+                    'row': row_number,
+                    'message': f'{_("Unknown part")}: {code}',
+                })
+                continue
+
+            if sub_part.pk == part.pk:
+                errors.append({
+                    'row': row_number,
+                    'message': _('A BOM item cannot reference the assembly itself'),
+                })
+                continue
+
+            defaults = {}
+
+            if idx_ref is not None:
+                defaults['reference'] = cell(row, idx_ref)
+
+            if idx_notes is not None:
+                defaults['note'] = cell(row, idx_notes)
+
+            if idx_optional is not None:
+                defaults['optional'] = flag(cell(row, idx_optional))
+
+            if idx_consumable is not None:
+                defaults['consumable'] = flag(cell(row, idx_consumable))
+
+            if idx_variants is not None:
+                defaults['allow_variants'] = flag(cell(row, idx_variants))
+
+            existing = BomItem.objects.filter(part=part, sub_part=sub_part).first()
+
+            if existing is not None:
+                if not update_existing:
+                    skipped += 1
+                    continue
+
+                # 'quantity' is recalculated from 'raw_amount' during model validation,
+                # so the quantity must be applied via set_quantity()
+                existing.set_quantity(quantity)
+
+                for key, value in defaults.items():
+                    if value != '':
+                        setattr(existing, key, value)
+
+                existing.save()
+                updated += 1
+            else:
+                BomItem.objects.create(
+                    part=part,
+                    sub_part=sub_part,
+                    quantity=quantity,
+                    **defaults,
+                )
+                created += 1
+
+        return {
+            'part': part.pk,
+            'created': created,
+            'updated': updated,
+            'skipped': skipped,
+            'error_count': len(errors),
+            'errors': errors[:50],
+            'columns': {
+                'part': headers[idx_part] if idx_part is not None else None,
+                'quantity': headers[idx_qty] if idx_qty is not None else None,
+                'reference': headers[idx_ref] if idx_ref is not None else None,
+            },
+        }
+
+    def to_representation(self, instance):
+        """Return the import summary directly."""
+        return instance
+

@@ -61,6 +61,35 @@ export const getSupportedLanguages = (): Record<string, string> => {
   };
 };
 
+// Normalize a locale identifier (server default locale, stored user preference
+// or browser locale) to one of the keys returned by getSupportedLanguages().
+// The backend reports Django-style codes such as 'zh-hans', while the compiled
+// frontend message catalogs live in directories such as 'zh_Hans'.
+export function normalizeLocale(locale: string | null | undefined): string {
+  const keys = Object.keys(getSupportedLanguages());
+
+  if (!locale) {
+    return defaultLocale;
+  }
+
+  const candidate = locale.replaceAll('-', '_');
+  const lower = candidate.toLowerCase();
+
+  // Exact match (case-insensitive), e.g. 'zh-hans' -> 'zh_Hans'
+  const exact = keys.find((key) => key.toLowerCase() === lower);
+  if (exact) {
+    return exact;
+  }
+
+  // Base language match, e.g. 'zh' -> 'zh_Hans'
+  const base = lower.split('_')[0];
+  const baseMatch = keys.find(
+    (key) => key.toLowerCase().split('_')[0] === base
+  );
+
+  return baseMatch ?? defaultLocale;
+}
+
 export function LanguageContext({
   children
 }: Readonly<{ children: JSX.Element }>) {
@@ -85,9 +114,13 @@ export function LanguageContext({
       locale = defaultLocale;
     }
 
+    locale = normalizeLocale(locale);
+
     if (locale != activeLocale) {
-      setActiveLocale(locale);
-      activateLocale(locale);
+      // Activate the catalog first, then commit the locale state. The provider
+      // is keyed on the active locale, so the subtree only re-mounts once the
+      // new translations are actually loaded (avoids stale English strings).
+      activateLocale(locale).then(() => setActiveLocale(locale));
     }
   }, [activeLocale, language, server.default_locale, defaultLocale]);
 
@@ -99,12 +132,10 @@ export function LanguageContext({
   useEffect(() => {
     isMounted.current = true;
 
-    let lang: string = language || defaultLocale;
-
-    // Ensure that the selected language is supported
-    if (!Object.keys(getSupportedLanguages()).includes(lang)) {
-      lang = defaultLocale;
-    }
+    // Normalize the selected language, falling back to the server default
+    const lang: string = normalizeLocale(
+      language || server.default_locale || defaultLocale
+    );
 
     activateLocale(lang)
       .then(() => {
@@ -160,7 +191,7 @@ export function LanguageContext({
     return () => {
       isMounted.current = false;
     };
-  }, [language]);
+  }, [language, server.default_locale]);
 
   if (loadedState === 'loading') {
     return <LoadingOverlay visible={true} />;
@@ -177,8 +208,14 @@ export function LanguageContext({
   }
 
   // only render the i18n Provider if the locales are fully activated, otherwise we end
-  // up with an error in the browser console
-  return <I18nProvider i18n={i18n}>{children}</I18nProvider>;
+  // up with an error in the browser console.
+  // The provider is keyed on the active locale so that all components re-render
+  // with the newly loaded catalog (simple `t` calls do not subscribe to changes).
+  return (
+    <I18nProvider i18n={i18n} key={activeLocale ?? defaultLocale}>
+      {children}
+    </I18nProvider>
+  );
 }
 
 // This function is used to determine the locale to activate based on the prioritization rules.
@@ -186,22 +223,23 @@ export function getPriorityLocale(): string {
   const serverDefault = useServerApiState.getState().server.default_locale;
   const userDefault = useLocalState.getState().language;
 
-  return userDefault || serverDefault || defaultLocale;
+  return normalizeLocale(userDefault || serverDefault || defaultLocale);
 }
 
 export async function activateLocale(locale: string | null) {
-  if (!locale) {
-    locale = getPriorityLocale();
-  }
-
-  const localeDir = locale.split('-')[0]; // Extract the base locale (e.g., 'en' from 'en-US')
+  // Resolve aliases (e.g. server-side 'zh-hans') to a supported catalog key ('zh_Hans')
+  const resolved = normalizeLocale(locale ?? getPriorityLocale());
 
   try {
-    const { messages } = await import(`../locales/${localeDir}/messages.ts`);
-    i18n.load(locale, messages);
-    i18n.activate(locale);
+    const { messages } = await import(`../locales/${resolved}/messages.ts`);
+    i18n.load(resolved, messages);
+    i18n.activate(resolved);
+    // Keep the document language in sync (accessibility / font selection)
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = resolved.replaceAll('_', '-');
+    }
     markLocaleReady();
   } catch (err) {
-    console.error(`Failed to load locale ${locale}:`, err);
+    console.error(`Failed to load locale ${resolved}:`, err);
   }
 }

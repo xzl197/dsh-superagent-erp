@@ -487,7 +487,8 @@ def run(
     path = path or local_dir()
 
     try:
-        result = c.run(f'cd "{path}" && {cmd}', pty=pty, env=env, hide=hide)
+        # InvenTree local patch: the 'pty' module is not available on Windows
+        result = c.run(f'cd "{path}" && {cmd}', pty=pty and os.name != 'nt', env=env, hide=hide)
     except UnexpectedExit as e:
         error(f"ERROR: InvenTree command failed: '{cmd}'")
         warning('- Refer to the error messages in the log above for more information')
