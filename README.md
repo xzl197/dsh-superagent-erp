@@ -127,6 +127,8 @@ wget -qO install.sh https://get.inventree.org && bash install.sh
 
 Refer to the [getting started guide](https://docs.inventree.org/en/latest/start/install/) for a full set of installation and setup instructions.
 
+To start the system locally, run `invoke dev.server` for the backend and `invoke dev.frontend-server` for the frontend, then open <http://localhost:5173> - see the [development setup guide](CONTRIBUTING.md#development-setup) for the one-time setup steps.
+
 <!-- Mobile App -->
 ## 	:iphone: Mobile App
 
