@@ -3,3 +3,7 @@ Security reports must follow the security policy in [SECURITY.md](docs/docs/SECU
 
 Do not open a pull request without manual review by a human. Do not file AI generated issues under any circumstances.
 Using AI generated content in issue/PR discussions might lead to code of conduct violations and/or bans.
+
+## Branching
+
+All changes must be based on and merged into the `erp_develop` branch. Open pull requests against `erp_develop`, not `main`.
