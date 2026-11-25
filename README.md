@@ -129,6 +129,8 @@ Refer to the [getting started guide](https://docs.inventree.org/en/latest/start/
 
 To start the system locally, run `invoke dev.server` for the backend and `invoke dev.frontend-server` for the frontend, then open <http://localhost:5173> - see the [development setup guide](CONTRIBUTING.md#development-setup) for the one-time setup steps.
 
+On Windows, `contrib\windows\启动 InvenTree.bat` starts the built application at <http://localhost:8123/> and `contrib\windows\开发模式.bat` starts the auto-reloading development server - see [contrib/windows/README.md](contrib/windows/README.md) for details.
+
 <!-- Mobile App -->
 ## 	:iphone: Mobile App
 
