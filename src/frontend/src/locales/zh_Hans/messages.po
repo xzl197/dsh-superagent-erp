@@ -1339,11 +1339,11 @@ msgstr "显示分配给您的生产订单数量"
 
 #: src/components/dashboard/DashboardWidgetLibrary.tsx:133
 msgid "Active Sales Orders"
-msgstr "活动的销售订单"
+msgstr "活跃的销售订单"
 
 #: src/components/dashboard/DashboardWidgetLibrary.tsx:135
 msgid "Show the number of sales orders which are currently active"
-msgstr "显示当前活动的销售订单数量"
+msgstr "显示当前活跃的销售订单数量"
 
 #: src/components/dashboard/DashboardWidgetLibrary.tsx:140
 msgid "Overdue Sales Orders"
