@@ -16,6 +16,8 @@ src = ["src/backend/InvenTree"]
 
 [tool.ruff.lint.extend-per-file-ignores]
 "__init__.py" = ["D104"]
+# The Windows launcher contains Chinese UI strings with full-width punctuation
+"contrib/windows/*.py" = ["RUF001"]
 
 [tool.ruff.lint]
 select = ["A", "B", "C", "C4", "D", "F", "I", "N", "SIM", "PIE", "PLE", "PLW", "RUF", "UP", "W",
