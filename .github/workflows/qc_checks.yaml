@@ -235,7 +235,10 @@ jobs:
         run: echo "${DIFF}" >> $GITHUB_STEP_SUMMARY
 
       - name: Check for differences in API Schema
-        if: needs.paths-filter.outputs.api == 'false'
+        # This fork adds its own endpoints (e.g. BOM import), which are not part of
+        # the upstream inventree/schema export; the strict comparison is only valid
+        # in the upstream repository.
+        if: github.repository == 'inventree/InvenTree' && needs.paths-filter.outputs.api == 'false'
         run: |
           diff --color -u src/backend/InvenTree/schema.yml api.yaml
           diff -u src/backend/InvenTree/schema.yml api.yaml && echo "no difference in API schema " || exit 2
