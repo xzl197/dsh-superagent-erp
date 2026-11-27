@@ -104,7 +104,7 @@ class Command(BaseCommand):
         rows = self.read_rows(path)
         categories = sorted({row['category'] for row in rows})
 
-        if kwargs.get('dry_run', False):
+        if kwargs.get('dry_run'):
             self.stdout.write(
                 self.style.WARNING(
                     f'Dry run: would import {len(rows)} parts into '
