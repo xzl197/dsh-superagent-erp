@@ -311,7 +311,7 @@ jobs:
             --report-dir ./coverage \
 
       - name: Upload coverage reports to Codecov
-        if: ${{ !cancelled() && github.ref == 'refs/heads/master' && secrets.CODECOV_TOKEN != '' }}
+        if: ${{ !cancelled() && vars.CODECOV_ENABLED == 'true' }}
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
