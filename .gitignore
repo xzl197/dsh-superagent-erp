@@ -120,3 +120,6 @@ InvenTree/web/static
 # test results and logs
 _tests*.txt
 .codspeed/
+
+# local user data: business data lives here, never in the repository
+userdata/

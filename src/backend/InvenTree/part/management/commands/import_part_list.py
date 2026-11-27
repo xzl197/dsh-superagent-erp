@@ -1,9 +1,9 @@
 """Management command to import a part list from a CSV file.
 
 The CSV file is a normalised part list (one row per part), for example the
-``contrib/part-list/parts.csv`` file which holds the DR02 and BASE
-component lists.  Each row creates (or updates) a part, its category and the
-part parameters which are defined by the list.
+``userdata/part-list/parts.csv`` file kept in your local (unversioned) user data
+directory.  Each row creates (or updates) a part, its category and the part
+parameters which are defined by the list.
 
 The import is idempotent: running it again updates the existing parts (matched
 by IPN) and their parameter values instead of creating duplicates.
