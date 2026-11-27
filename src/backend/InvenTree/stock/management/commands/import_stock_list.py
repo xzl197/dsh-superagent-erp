@@ -1,9 +1,9 @@
 """Management command to set part stock levels from a CSV file.
 
 The CSV file lists the target stock quantity for each part (matched by IPN),
-optionally with the stock location.  For example the
-``contrib/part-list/stock_levels.csv`` file holds the DR02/BASE inventory
-quantities taken from the customer stock workbook.
+optionally with the stock location.  A file kept in your local (unversioned)
+``userdata/part-list/stock_levels.csv`` holds the target inventory quantity
+of each part.
 
 The import is idempotent: running it again sets the same stock level instead
 of adding to it.

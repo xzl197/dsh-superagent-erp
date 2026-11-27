@@ -22,7 +22,7 @@ def stock_row(**overrides) -> dict:
         'quantity': '28',
         'name': '',
         'category': '',
-        'location': '主仓库',
+        'location': 'Main Warehouse',
     }
     row.update(overrides)
     return row
@@ -33,11 +33,11 @@ class ImportStockListTest(TestCase):
 
     def setUp(self):
         """Create a part and stock location used by the tests."""
-        self.category = PartCategory.objects.create(name='电子元件')
+        self.category = PartCategory.objects.create(name='Electronics')
         self.part = Part.objects.create(
             IPN='SKU-001', name='Capacitor 10uF', category=self.category
         )
-        self.location = StockLocation.objects.create(name='主仓库')
+        self.location = StockLocation.objects.create(name='Main Warehouse')
 
     def write_csv(
         self,
@@ -111,7 +111,7 @@ class ImportStockListTest(TestCase):
     def test_import_creates_missing_parts(self):
         """Missing parts can be created when --create-missing is used."""
         rows = [
-            stock_row(ipn='ASSY-100', quantity='17', name='Assembly board', category='整机')
+            stock_row(ipn='ASSY-100', quantity='17', name='Assembly board', category='Products')
         ]
 
         with tempfile.TemporaryDirectory() as directory:
@@ -130,7 +130,7 @@ class ImportStockListTest(TestCase):
 
     def test_import_unknown_part_requires_flag(self):
         """An unknown part is rejected without --create-missing."""
-        rows = [stock_row(ipn='ASSY-100', name='Assembly board', category='整机')]
+        rows = [stock_row(ipn='ASSY-100', name='Assembly board', category='Products')]
 
         with tempfile.TemporaryDirectory() as directory:
             path = self.write_csv(directory, rows)
@@ -143,7 +143,7 @@ class ImportStockListTest(TestCase):
 
     def test_import_requires_name_for_new_part(self):
         """A missing part without a name is rejected."""
-        rows = [stock_row(ipn='ASSY-200', name='', category='整机')]
+        rows = [stock_row(ipn='ASSY-200', name='', category='Products')]
 
         with tempfile.TemporaryDirectory() as directory:
             path = self.write_csv(directory, rows)
