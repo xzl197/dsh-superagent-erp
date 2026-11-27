@@ -8,6 +8,10 @@ on:
   pull_request:
     branches-ignore: ["l10*"]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   python_version: 3.12
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -80,7 +84,7 @@ jobs:
         run: invoke dev.test --check --migrations --report --coverage --translations
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        if: always()
+        if: always() && secrets.CODECOV_TOKEN != ''
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: inventree/InvenTree
@@ -131,7 +135,7 @@ jobs:
         run: invoke dev.test --check --migrations --report --coverage --translations
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        if: always()
+        if: always() && secrets.CODECOV_TOKEN != ''
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: inventree/InvenTree
@@ -178,7 +182,7 @@ jobs:
         run: invoke dev.test --check --migrations --report --coverage --translations
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        if: always()
+        if: always() && secrets.CODECOV_TOKEN != ''
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: inventree/InvenTree
