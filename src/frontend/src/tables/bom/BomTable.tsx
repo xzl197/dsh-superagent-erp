@@ -43,7 +43,6 @@ import {
   RenderPartColumn
 } from '../../components/tables/ColumnRenderers';
 import { PartCategoryFilter } from '../../components/tables/Filter';
-import { BomImportModal } from '../../pages/part/bom/BomImportModal';
 import {
   InvenTreeTable,
   isNestedRecord
@@ -58,6 +57,7 @@ import {
   useDeleteApiFormModal,
   useEditApiFormModal
 } from '../../hooks/UseForm';
+import { BomImportModal } from '../../pages/part/bom/BomImportModal';
 import { useImporterState } from '../../states/ImporterState';
 import {
   useGlobalSettingsState,

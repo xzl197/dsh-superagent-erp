@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro';
 import {
   Alert,
   Anchor,
@@ -15,17 +16,17 @@ import { notifications } from '@mantine/notifications';
 import {
   IconCircleCheck,
   IconDownload,
-  IconFileUpload,
-  IconExclamationCircle
+  IconExclamationCircle,
+  IconFileUpload
 } from '@tabler/icons-react';
-import { t } from '@lingui/core/macro';
 import { useState } from 'react';
 
 import { ApiEndpoints } from '@lib/enums/ApiEndpoints';
 import { apiUrl } from '@lib/functions/Api';
 import { api } from '../../../App';
 
-const TEMPLATE_CONTENT = '\ufeff子件编码,数量,位号,备注\nRES-10K,2,R1,示例行，可删除\n';
+const TEMPLATE_CONTENT =
+  '\ufeff子件编码,数量,位号,备注\nRES-10K,2,R1,示例行，可删除\n';
 
 function downloadTemplate() {
   const blob = new Blob([TEMPLATE_CONTENT], { type: 'text/csv;charset=utf-8' });
@@ -169,8 +170,8 @@ export function BomImportModal({
               title={t`Import Result`}
             >
               <Text size='sm'>
-                {t`Created`}: {result.created} · {t`Updated`}: {result.updated} ·{' '}
-                {t`Skipped`}: {result.skipped} · {t`Errors`}:{' '}
+                {t`Created`}: {result.created} · {t`Updated`}: {result.updated}{' '}
+                · {t`Skipped`}: {result.skipped} · {t`Errors`}:{' '}
                 {result.error_count}
               </Text>
               {result.error_count > 0 && (
