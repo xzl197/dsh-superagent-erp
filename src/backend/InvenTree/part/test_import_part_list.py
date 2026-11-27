@@ -103,9 +103,9 @@ class ImportPartListTest(TestCase):
         }
 
         self.assertEqual(
-            set(parameters), {'器件类型', '值/型号', '封装', '位号', '用量'}
+            set(parameters), {'Component Type', '值/型号', '封装', '位号', '用量'}
         )
-        self.assertEqual(parameters['器件类型'].data, 'Capacitor')
+        self.assertEqual(parameters['Component Type'].data, 'Capacitor')
         self.assertEqual(parameters['值/型号'].data, '10uF/16V')
         self.assertEqual(parameters['封装'].data, '0603')
         self.assertEqual(parameters['位号'].data, 'C1, C3, C8')
@@ -151,7 +151,7 @@ class ImportPartListTest(TestCase):
                 directory,
                 [
                     part_row(
-                        name='Capacitor 10uF 更新',
+                        name='Capacitor 10uF updated',
                         description='更新后的描述',
                         designators='C1',
                     )
@@ -160,7 +160,7 @@ class ImportPartListTest(TestCase):
             call_command('import_part_list', str(path), verbosity=0)
 
         part = Part.objects.get(IPN='SKU-001')
-        self.assertEqual(part.name, 'Capacitor 10uF 更新')
+        self.assertEqual(part.name, 'Capacitor 10uF updated')
         self.assertEqual(part.description, '更新后的描述')
 
         part_content_type = ContentType.objects.get_for_model(Part)
