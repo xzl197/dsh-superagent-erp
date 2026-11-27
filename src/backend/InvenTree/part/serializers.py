@@ -1818,6 +1818,7 @@ class PartCopyBOMSerializer(serializers.Serializer):
             copy_substitutes=data.get('copy_substitutes', True),
         )
 
+
 class PartBomImportSerializer(serializers.Serializer):
     """Serializer for importing BOM items from an uploaded data file.
 
@@ -1840,8 +1841,7 @@ class PartBomImportSerializer(serializers.Serializer):
         fields = ['data_file', 'update_existing']
 
     data_file = serializers.FileField(
-        label=_('Data File'),
-        help_text=_('CSV or Excel file containing BOM data'),
+        label=_('Data File'), help_text=_('CSV or Excel file containing BOM data')
     )
 
     update_existing = serializers.BooleanField(
@@ -1874,15 +1874,7 @@ class PartBomImportSerializer(serializers.Serializer):
             '型号',
             '名称',
         },
-        'quantity': {
-            'quantity',
-            'qty',
-            'count',
-            'amount',
-            '数量',
-            '用量',
-            '每台数量',
-        },
+        'quantity': {'quantity', 'qty', 'count', 'amount', '数量', '用量', '每台数量'},
         'reference': {'reference', 'ref', 'designator', '位号', '参考', '位置'},
         'notes': {'notes', 'note', 'description', 'remark', '备注', '说明'},
         'optional': {'optional', '可选'},
@@ -1956,9 +1948,9 @@ class PartBomImportSerializer(serializers.Serializer):
             raise serializers.ValidationError({'part': _('Part not specified')})
 
         if not part.assembly:
-            raise serializers.ValidationError(
-                {'part': _('BOM items can only be added to an assembly part')}
-            )
+            raise serializers.ValidationError({
+                'part': _('BOM items can only be added to an assembly part')
+            })
 
         update_existing = validated_data.get('update_existing', True)
 
@@ -1978,9 +1970,9 @@ class PartBomImportSerializer(serializers.Serializer):
         idx_variants = self._match_header(headers, 'allow_variants')
 
         if idx_part is None:
-            raise serializers.ValidationError(
-                {'data_file': _('Could not locate a component part column (e.g. IPN)')}
-            )
+            raise serializers.ValidationError({
+                'data_file': _('Could not locate a component part column (e.g. IPN)')
+            })
 
         def cell(row, idx):
             if idx is None or idx >= len(row):
@@ -2074,10 +2066,7 @@ class PartBomImportSerializer(serializers.Serializer):
                 updated += 1
             else:
                 BomItem.objects.create(
-                    part=part,
-                    sub_part=sub_part,
-                    quantity=quantity,
-                    **defaults,
+                    part=part, sub_part=sub_part, quantity=quantity, **defaults
                 )
                 created += 1
 
@@ -2098,4 +2087,3 @@ class PartBomImportSerializer(serializers.Serializer):
     def to_representation(self, instance):
         """Return the import summary directly."""
         return instance
-

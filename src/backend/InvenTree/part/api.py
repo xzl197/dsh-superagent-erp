@@ -1662,11 +1662,7 @@ part_api_urls = [
             # Endpoint for duplicating a BOM for the specific Part
             path('bom-copy/', PartCopyBOM.as_view(), name='api-part-bom-copy'),
             # Endpoint for importing BOM items from a data file
-            path(
-                'bom-import/',
-                PartBomImport.as_view(),
-                name='api-part-bom-import',
-            ),
+            path('bom-import/', PartBomImport.as_view(), name='api-part-bom-import'),
             # Endpoint for validating a BOM for the specific Part
             path(
                 'bom-validate/', PartValidateBOM.as_view(), name='api-part-bom-validate'
