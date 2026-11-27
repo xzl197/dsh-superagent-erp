@@ -43,6 +43,9 @@ env:
 jobs:
 
   paths-filter:
+    permissions:
+      contents: read # for dorny/paths-filter to fetch a list of changed files
+      pull-requests: read # for dorny/paths-filter to read pull requests
     name: filter
     runs-on: ubuntu-latest
     outputs:
